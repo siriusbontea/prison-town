@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset=utf-8 />
+	<title>Prison Town Donut Run</title>
+	<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+	<link rel='icon' href='https://newmapsplus.github.io/favicon.ico' type='image/x-icon' />
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+	<!-- Add Leaflet CSS library. Check to make sure it is latest version. -->
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+		integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+		crossorigin="" />
+	<!-- Add Leaflet plugin CSS after Leaflet library. -->
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
+
+	<link href="https://fonts.googleapis.com/css?family=Quicksand:400,700" rel="stylesheet">
+
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			font-family: 'Quicksand', sans-serif;
+			font-size: 100%;
+			color: #3d3d3d;
+		}
+
+		h1 {
+			position: absolute;
+			margin-top: 0;
+			top: 10px;
+			left: 15px;
+			font-size: 1.5em;
+			font-family: 'Quicksand', sans-serif;
+			font-weight: 700;
+			letter-spacing: .04em;
+			padding: 10px 10px;
+			/* Add styles to match Leaflet UI elements */
+			background: rgba(256, 256, 256, .3);
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+			border: 1px solid #ddd;
+			border-radius: 15px;
+			z-index: 800;
+		}
+
+		h2 {
+			font-family: 'Quicksand', sans-serif;
+			font-size: 1.2em;
+			letter-spacing: .04em;
+
+		}
+
+		.svg-title {
+			float: none;
+			vertical-align: middle;
+			width: 50px;
+			margin-right: 10px
+		}
+
+		#map {
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			width: 100%;
+		}
+
+		#about {
+			position: absolute;
+			bottom: 20px;
+			left: 15px;
+			width: 280px;
+			height:300px;
+			overflow: scroll;
+			padding: 0 15px;
+			/* Add styles to match Leaflet UI elements */
+			background: rgba(256, 256, 256, .3);
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+			border: 1px solid #ddd;
+			border-radius: 15px;
+			z-index: 800;
+
+		}
+
+		#toggle {
+			position: absolute;
+			top: 12px;
+			right: 55px;
+			padding: 5px;
+			/* Add styles to match Leaflet UI elements */
+			background: rgba(255, 255, 255, 1);
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+			border: 1px solid #ddd;
+			border-radius: 3px;
+			z-index: 800;
+		}
+
+		#toggle:hover {
+			background: rgb(255, 226, 2);
+			cursor: pointer;
+		}
+
+		#toggle:active {
+			background: rgb(254, 193, 60);
+			cursor: pointer;
+		}
+
+		.show {
+			display: block;
+		}
+
+		.hide {
+			display: none;
+		}
+
+		p {
+			font-size: .9em;
+			line-height: 1.5em;
+		}
+
+		a {
+			color: #005daa;
+			text-decoration: none;
+		}
+
+		a:hover {
+			text-decoration: underline;
+		}
+
+		/* Leaflet popup styles */
+		.leaflet-popup-content {
+			font-family: 'Quicksand', sans-serif;
+			font-size: 1.1em;
+		}
+
+		.svg-popup {
+			float: none;
+			text-align: center;
+			display: block;
+			height: 60px;
+			margin-right: auto;
+			margin-left: auto
+		}
+
+		.svg-popup-big {
+			float: none;
+			text-align: center;
+			display: block;
+			height: 100px;
+			margin-right: auto;
+			margin-left: auto
+		}
+
+		/* 
+		When browser is 900px high or less
+		make the font a little smaller.
+		 */
+		@media screen and (max-height: 400px) {
+
+			#about p,
+			#about h2 {
+				font-size: .6em;
+			}
+
+			h1 {
+				font-size: 1.2em;
+			}
+
+			#about h2 {
+				font-size: 1em;
+			}
+
+			.leaflet-popup-content {
+				font-family: 'Quicksand', sans-serif;
+				font-size: 0.9em;
+			}
+		}
+
+		/* Don't display info block when window is very small */
+		@media screen and (max-height: 200px) {
+
+			#about {
+				display: none;
+			}
+		}
+	</style>
+</head>
+
+<body>
+
+	<h1 id="title" class="show"><img src="svgs/donut-svgrepo-com.svg" class='svg-title'>Prison Town Donut Run!</h1>
+
+	<div id='map'></div>
+
+	<button id="toggle">Hide</button>
+
+	<section id="about" class="show">
+		<h2>About</h2>
+		<p>Leavenworth, Kansas has the distinction of being the first town in Kansas as well as a stop along the way of
+			the Lewis and Clark expedition. Additionally, Leavenworth has the reputation of being a prison town due to
+			its military, county, state, and federal prisons. The <a
+				href="https://www.google.com/maps/reviews/@39.3303848,-94.9363856,17z/data=!3m1!4b1!4m5!14m4!1m3!1m2!1s100759402632179568000!2s0x0:0x42eecfaa24c6abfc?hl=en-US">Google
+				5-star reviews</a> of the prisons are gems of sarcastic humour if you're interested in a good laugh.</p>
+		<p>This map shows the myriad of prisons and inmate rehabilitation centres in the Fort Leavenworth, Leavenworth,
+			and Lansing area of Kansas. No prison map is complete without police station locations. And no police
+			station map is complete without locations to donut shops.</p>
+		<p>Starting with the Rod and Gun Club (home away from home), the route takes us through the gated community of
+			Fort
+			Leavenworth Army Installation, then out to Leavenworth's famous Federal Penitentiary, then onward to other
+			prisons and police stations in Leavenworth and Lansing, with stops along the way to our donut shops.</p>
+		<p>Map authored by Sirius T. Bontea</p>
+	</section>
+	<!-- Add Leaflet JS library. Check to make sure it is latest version. -->
+	<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+		integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+		crossorigin=""></script>
+	<!-- Load a Leaflet plugin to provide geolocation. Load this after Leaflet JS.-->
+	<script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.js" charset="utf-8">
+	</script>
+	<!-- the Donut Run route data is here -->
+	<script src="data/donut_run.js"></script>
+	<script>
+		var options = {
+			center: [39.3080938, -94.9043974, ],
+			zoomControl: false
+		}
+		console.log(routeData); // output will be our GeoJSON object
+
+		var locate_options = {
+			position: 'topright',
+			strings: {
+				title: "Show me where I am!"
+			}
+		}
+
+		var map = L.map('map', options);
+
+		// add zoom control to top right window position
+		L.control.zoom({
+			position: 'topright'
+		}).addTo(map);
+
+		// add geolocation control to top right window position (Leaflet can handle multiple top-right elements)
+		L.control.locate(locate_options).addTo(map);
+
+		// Get basemap URL from Leaflet Providers
+		var basemap_url = 'http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png'
+
+		// Get basemap attributes from Leaflet Providers
+		var basemap_attributes = {
+			attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
+			subdomains: 'abcd',
+			maxZoom: 19
+		};
+		// requests some map tiles
+		var tiles = L.tileLayer(basemap_url, basemap_attributes);
+
+		map.addLayer(tiles);
+
+		// var message = '<h2>University of Kentucky!</h2>Department of Geography';
+
+		// L.marker(map.getCenter())
+		// 	.bindPopup(message)
+		// 	.addTo(map)
+
+
+		var myRoute = L.geoJson(routeData, {
+
+			filter: function (feature) {
+				if (feature.geometry.type == "LineString") {
+					return feature;
+				}
+			},
+			style: function (feature) {
+
+				return {
+					color: "#005DAA",
+					weight: 7,
+					opacity: .4,
+					dashArray: "3, 8"
+				}
+			},
+			// onEachFeature: function (feature, layer) {
+			// 	// var coords = feature.geometry.coordinates
+			// 	// var lat = coords[1].toLocaleString()
+			// 	// var lng = coords[0].toLocaleString()
+			// 	var lat = feature.geometry.coordinates[0].toLocaleString()
+			// 	var lng = feature.geometry.coordinates[1].toLocaleString()
+
+			// 	var popup =
+			// 		`<h2>Location</h2> ${lat}&deg; ${lng}&deg;`
+			// 	layer.bindPopup(popup);
+			// }
+		}).addTo(map);
+
+		// Filtered dunut_run.js features for Point locations
+
+		var myStops = L.geoJson(routeData, {
+
+			filter: function (feature) {
+				if (feature.geometry.type == "Point") {
+					return feature;
+				}
+			},
+			onEachFeature: function (feature, layer) {
+				// console.log(`A feature is: `, feature)
+				// console.log(`A layer is: `, layer)
+				var props = feature.properties
+				var popup = `<h2>${props.name}</h2>`
+				// layer.setIcon(props.icon)
+				layer.bindPopup(popup);
+				// console.log(feature.properties)
+
+				// Can't seem to get a custom marker set...
+				// var icon = L.Icon({
+				// 	iconUrl: props.icon,
+				// 	iconSize: [40, 40],
+				// 	popupAnchor: [0, -22],
+				// 	className: "icon"
+				// });
+			//	layer.setIcon(icon)
+			}
+		}).addTo(map);
+
+
+
+		// icon code
+		
+		// var myIcon = L.icon({
+		// 	iconUrl: props.icon,
+		// 	iconSize: [40, 40],
+		// 	popupAnchor: [0, -22],
+		// 	className: "icon"
+		// }).addTo(map);
+
+		
+
+
+		// adding visual affordance to map items
+		myRoute.on('mouseover', function () {
+			console.log(this)
+			this.setStyle({
+				color: "red"
+			})
+		})
+		myRoute.on('mouseout', function () {
+			this.resetStyle()
+		})
+		// provides the lat/lng of a marker created with a click along the route
+		myRoute.on("click", function (e) {
+			console.log(e),
+				popup = "<h2>Location</h2>" +
+				e.latlng.lat.toLocaleString() + "&deg;, " +
+				e.latlng.lng.toLocaleString() + "&deg;"
+
+			if (L.Browser.mobile) {
+				L.marker(e.latlng).bindPopup(popup).addTo(map)
+			} else {
+				L.marker(e.latlng).bindTooltip(popup).addTo(map)
+			}
+		})
+
+		// centres the map on the point locations when clicked
+		map.on('popupopen', function (e) {
+			// find the pixel location on the map where the popup anchor is
+			var px = map.project(e.popup._latlng);
+			// find the height of the popup container, divide by 2 to centre, subtract from the Y axis of marker location
+			px.y -= e.popup._container.clientHeight / 2;
+			// pan to new center
+			map.panTo(map.unproject(px), {
+				animate: true
+			});
+		});
+
+		// fit the map to the route boundary extent
+		// map.fitBounds(myRoute.getBounds());
+
+		// Create empty latLng bounds for zooming/centering map dynamically
+		const bounds = L.latLngBounds();   
+
+		const myLocations = [myRoute, myStops];
+
+		for (i of myLocations) {
+			bounds.extend(i.getBounds());
+		}
+
+		map.fitBounds(bounds, {
+			padding: [50, 50],
+			animate: false
+		}
+		).panBy([-20, 0], {
+			animate: false
+		});
+
+		const button = document.getElementById('toggle');
+		const about = document.getElementById('about');
+		const title = document.getElementById('title');
+
+		button.addEventListener('click', function () {
+			// if (map.hasLayer(myStops)) {
+			// 	map.removeLayer(myStops);
+			// } else {
+			// 	map.addLayer(myStops);
+			// }
+			title.classList.toggle('hide');
+			about.classList.toggle('hide');
+			button.innerHTML = button.innerHTML === 'Hide' ? 'Show' : 'Hide';
+
+		});
+
+	</script>
+
+</body>
+
+</html>
